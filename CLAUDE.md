@@ -38,16 +38,18 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 - API-Football/Primeira Liga ist **vollständig verdrahtet, aber inaktiv**, bis Proxy + Key stehen
   (siehe `proxy/README.md`, dann `VITE_PROXY_BASE_URL` in `.env`). Ohne Proxy zeigt die Liga
   einen klaren Hinweis statt eines Absturzes.
-- Noch **kein** GitHub-Repo angelegt/gepusht, **kein** Deployment eingerichtet.
+- **GitHub-Repo + Deployment stehen:** Repo `jorgepnt-design/fussball-ligen-app` (öffentlich),
+  GitHub-Pages-Workflow `.github/workflows/deploy-pages.yml` deployt bei jedem Push auf `main`.
+  **Live:** https://jorgepnt-design.github.io/fussball-ligen-app/ (Pages-Quelle = GitHub Actions).
 
 ## Sinnvolle nächste Schritte
 1. Proxy deployen (Cloudflare), Key setzen, `VITE_PROXY_BASE_URL` eintragen → Primeira Liga testen.
-2. GitHub-Repo `fussball-ligen-app` anlegen, pushen, GitHub-Pages-Workflow ergänzen
-   (analog zur WM-App: `.github/workflows/deploy-pages.yml`). `vite.config.ts` `base` ggf. anpassen.
-3. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
+   (Hinweis: Pages-Build hat keinen Proxy-ENV → Portugal zeigt online weiter den Konfig-Hinweis,
+   bis `VITE_PROXY_BASE_URL` als Build-Secret/Env im Workflow gesetzt wird.)
+2. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
    Auto-Refresh für Live-Spiele, Match-Detail (Aufstellungen/Statistik – bei API-Football via
    `fixtures/lineups`, `fixtures/statistics`, `fixtures/events`; bei OpenLigaDB begrenzt).
-4. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
+3. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
 
 ## Befehle
 - `npm install` · `npm run dev` · `npm run build` (führt `tsc -b` mit, strenge TS-Optionen).
