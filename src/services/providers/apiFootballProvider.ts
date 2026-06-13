@@ -32,8 +32,17 @@ const request = async <T>(path: string, params: Record<string, string | number>)
   const response = await fetch(`${PROXY}/api/${path}?${query}`, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`Datenanbieter-Anfrage fehlgeschlagen (HTTP ${response.status})`);
   const json = (await response.json()) as { response?: T; errors?: unknown };
-  if (json.errors && Array.isArray(json.errors) && json.errors.length > 0) {
-    throw new Error("Datenanbieter meldete einen Fehler (Key/Kontingent prüfen).");
+  // API-Football meldet Fehler je nach Fall als Array ODER als Objekt
+  // (z. B. { plan: "..." } bei fehlendem Saison-Zugang, { rateLimit: "..." } bei Limit).
+  // Beide Formen einsammeln und die Originalmeldung in der UI sichtbar machen.
+  const errs = json.errors;
+  const messages = Array.isArray(errs)
+    ? errs.map(String)
+    : errs && typeof errs === "object"
+      ? Object.values(errs as Record<string, unknown>).map(String)
+      : [];
+  if (messages.length > 0) {
+    throw new Error(`Datenanbieter meldete einen Fehler: ${messages.join(" ")}`);
   }
   return (json.response ?? []) as T;
 };

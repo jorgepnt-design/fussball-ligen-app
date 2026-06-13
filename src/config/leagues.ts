@@ -7,6 +7,9 @@ import type { LeagueConfig } from "../types";
 //   Serie A = 135, Ligue 1 = 61, Eredivisie = 88 (siehe API-Football-Doku).
 
 const recentSeasons = ["2025", "2024", "2023"];
+// API-Football Free-Plan deckt nur die Saisons 2022–2024 ab (keine laufende Saison).
+// Eigene Liste für key-basierte Ligen, damit out-of-the-box echte Daten erscheinen.
+const apiFootballFreeSeasons = ["2024", "2023", "2022"];
 
 export const leagues: LeagueConfig[] = [
   {
@@ -16,8 +19,8 @@ export const leagues: LeagueConfig[] = [
     flag: "🇵🇹",
     provider: "apifootball",
     apiFootballId: 94,
-    seasons: recentSeasons,
-    defaultSeason: "2025",
+    seasons: apiFootballFreeSeasons,
+    defaultSeason: "2024",
   },
   {
     id: "bundesliga-1",
