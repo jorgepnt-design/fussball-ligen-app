@@ -44,8 +44,9 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 
 ## Sinnvolle nächste Schritte
 1. Proxy deployen (Cloudflare), Key setzen, `VITE_PROXY_BASE_URL` eintragen → Primeira Liga testen.
-   (Hinweis: Pages-Build hat keinen Proxy-ENV → Portugal zeigt online weiter den Konfig-Hinweis,
-   bis `VITE_PROXY_BASE_URL` als Build-Secret/Env im Workflow gesetzt wird.)
+   (Lokal: `VITE_PROXY_BASE_URL` in `.env`. Online: als **Repo-Variable** setzen unter
+   Settings → Secrets and variables → Actions → Variables – der Deploy-Workflow liest sie bereits
+   per `${{ vars.VITE_PROXY_BASE_URL }}`. Solange leer, zeigt Portugal online den Konfig-Hinweis.)
 2. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
    Auto-Refresh für Live-Spiele, Match-Detail (Aufstellungen/Statistik – bei API-Football via
    `fixtures/lineups`, `fixtures/statistics`, `fixtures/events`; bei OpenLigaDB begrenzt).
