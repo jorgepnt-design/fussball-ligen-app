@@ -35,22 +35,25 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 
 ## Aktueller Stand
 - Grundgerüst steht und **läuft mit OpenLigaDB** (Bundesliga 1/2) out-of-the-box (`npm run dev`).
-- API-Football/Primeira Liga ist **vollständig verdrahtet, aber inaktiv**, bis Proxy + Key stehen
-  (siehe `proxy/README.md`, dann `VITE_PROXY_BASE_URL` in `.env`). Ohne Proxy zeigt die Liga
-  einen klaren Hinweis statt eines Absturzes.
+- **Proxy + Liga Portugal sind live und verifiziert** (an echten Daten getestet, Tabelle
+  2024/25: Sporting CP Meister). Cloudflare-Worker: `ligen-proxy.jorge-ligen.workers.dev`
+  (Account Cloudflare/api-football = jorgepnt@gmail.com, API-Football Free-Plan, 100 Anfragen/Tag).
+  - **Wichtig – Free-Plan deckt nur Saisons 2022–2024**, NICHT die laufende Saison. Darum nutzt
+    Liga Portugal in `leagues.ts` die Saisons 2022–2024 (Standard 2024). Erst ein bezahlter Plan
+    gibt 2025+ frei → dann `apiFootballFreeSeasons` in `leagues.ts` erweitern.
+  - Worker cached erfolgreiche Antworten 10 Min am Edge (Fehler nie) → schont das Tageskontingent.
+  - Konfiguriert via `.env` (lokal, `VITE_PROXY_BASE_URL`, gitignored) **und** GitHub-Actions-
+    **Repo-Variable** `VITE_PROXY_BASE_URL` (für die Live-Seite, wird in `deploy-pages.yml` gelesen).
+  - Worker neu deployen: `cd proxy && npx wrangler deploy` (Login/Secret bleiben bestehen).
 - **GitHub-Repo + Deployment stehen:** Repo `jorgepnt-design/fussball-ligen-app` (öffentlich),
   GitHub-Pages-Workflow `.github/workflows/deploy-pages.yml` deployt bei jedem Push auf `main`.
   **Live:** https://jorgepnt-design.github.io/fussball-ligen-app/ (Pages-Quelle = GitHub Actions).
 
 ## Sinnvolle nächste Schritte
-1. Proxy deployen (Cloudflare), Key setzen, `VITE_PROXY_BASE_URL` eintragen → Primeira Liga testen.
-   (Lokal: `VITE_PROXY_BASE_URL` in `.env`. Online: als **Repo-Variable** setzen unter
-   Settings → Secrets and variables → Actions → Variables – der Deploy-Workflow liest sie bereits
-   per `${{ vars.VITE_PROXY_BASE_URL }}`. Solange leer, zeigt Portugal online den Konfig-Hinweis.)
-2. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
+1. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
    Auto-Refresh für Live-Spiele, Match-Detail (Aufstellungen/Statistik – bei API-Football via
    `fixtures/lineups`, `fixtures/statistics`, `fixtures/events`; bei OpenLigaDB begrenzt).
-3. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
+2. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
 
 ## Befehle
 - `npm install` · `npm run dev` · `npm run build` (führt `tsc -b` mit, strenge TS-Optionen).
