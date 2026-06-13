@@ -1,0 +1,13 @@
+name = "ligen-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# Den API-Football-Key NICHT hier eintragen, sondern als Secret setzen:
+#   cd proxy
+#   npx wrangler secret put API_FOOTBALL_KEY
+#
+# Deployen:
+#   npx wrangler deploy
+#
+# Die ausgegebene URL (z. B. https://ligen-proxy.<subdomain>.workers.dev)
+# kommt in die .env der App als VITE_PROXY_BASE_URL.
