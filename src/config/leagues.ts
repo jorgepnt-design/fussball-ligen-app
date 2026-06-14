@@ -76,6 +76,16 @@ export const leagues: LeagueConfig[] = [
     seasons: apiFootballFreeSeasons,
     defaultSeason: "2024",
   },
+  {
+    id: "serie-a",
+    name: "Serie A",
+    country: "Italien",
+    flag: "🇮🇹",
+    provider: "apifootball",
+    apiFootballId: 135,
+    seasons: apiFootballFreeSeasons,
+    defaultSeason: "2024",
+  },
 ];
 
 export const defaultLeagueId = "primeira-liga";

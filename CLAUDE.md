@@ -54,8 +54,8 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   **Live:** https://jorgepnt-design.github.io/fussball-ligen-app/ (Pages-Quelle = GitHub Actions).
 
 ## Umgesetzte Features (Auswahl)
-- **Ligen:** Liga Portugal (94), La Liga (140), Premier League (39), Ligue 1 (61) über API-Football;
-  Bundesliga 1/2 über OpenLigaDB. Weitere Liga = ein Eintrag in `src/config/leagues.ts`.
+- **Ligen:** Liga Portugal (94), La Liga (140), Premier League (39), Ligue 1 (61), Serie A (135)
+  über API-Football; Bundesliga 1/2 über OpenLigaDB. Weitere Liga = ein Eintrag in `src/config/leagues.ts`.
 - **Favoriten-Vereine selbst wählbar (mehrere):** `FavoriteSelector` (Header, Dropdown zum
   Hinzufügen + ×-Chips) + `useFavoriteTeams`-Hook (localStorage `favoriteTeams`, je Liga als
   String-Array, migriert altes Einzelwert-Format). Markiert alle gewählten Vereine in Tabelle &
