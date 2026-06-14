@@ -35,6 +35,10 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 
 ## Aktueller Stand
 - Grundgerüst steht und **läuft mit OpenLigaDB** (Bundesliga 1/2) out-of-the-box (`npm run dev`).
+  - Saison-Auswahl inkl. **kommender Saison 2026/27** (`openLigaSeasons` in `leagues.ts`). In der
+    Sommerpause ist der Spielplan noch leer → `SchedulePage` zeigt einen Hinweis; Paarungen/Termine
+    erscheinen automatisch, sobald OpenLigaDB sie freigibt. API-Football-Ligen (Free-Plan) können
+    die kommende Saison nicht zeigen (nur 2022–2024).
 - **Proxy + Liga Portugal sind live und verifiziert** (an echten Daten getestet, Tabelle
   2024/25: Sporting CP Meister). Cloudflare-Worker: `ligen-proxy.jorge-ligen.workers.dev`
   (Account Cloudflare/api-football = jorgepnt@gmail.com, API-Football Free-Plan, 100 Anfragen/Tag).

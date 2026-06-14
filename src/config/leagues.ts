@@ -6,8 +6,11 @@ import type { LeagueConfig } from "../types";
 //   API-Football-Liga-IDs: Primeira Liga = 94, La Liga = 140, Premier League = 39,
 //   Serie A = 135, Ligue 1 = 61, Eredivisie = 88 (siehe API-Football-Doku).
 
-const recentSeasons = ["2025", "2024", "2023"];
-// API-Football Free-Plan deckt nur die Saisons 2022–2024 ab (keine laufende Saison).
+// OpenLigaDB (deutsche Ligen): inkl. kommender Saison 2026/27. Solange die Liga den
+// Spielplan noch nicht freigegeben hat, ist sie leer – die Paarungen/Termine erscheinen
+// automatisch, sobald OpenLigaDB sie veröffentlicht (Spieltag-Struktur existiert bereits).
+const openLigaSeasons = ["2026", "2025", "2024", "2023"];
+// API-Football Free-Plan deckt nur die Saisons 2022–2024 ab (keine laufende/kommende Saison).
 // Eigene Liste für key-basierte Ligen, damit out-of-the-box echte Daten erscheinen.
 const apiFootballFreeSeasons = ["2024", "2023", "2022"];
 
@@ -29,7 +32,7 @@ export const leagues: LeagueConfig[] = [
     flag: "🇩🇪",
     provider: "openliga",
     openLigaShortcut: "bl1",
-    seasons: recentSeasons,
+    seasons: openLigaSeasons,
     defaultSeason: "2025",
   },
   {
@@ -39,7 +42,7 @@ export const leagues: LeagueConfig[] = [
     flag: "🇩🇪",
     provider: "openliga",
     openLigaShortcut: "bl2",
-    seasons: recentSeasons,
+    seasons: openLigaSeasons,
     defaultSeason: "2025",
   },
 ];

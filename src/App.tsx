@@ -46,7 +46,7 @@ export default function App() {
           <LoadingState label="Daten werden geladen …" />
         ) : (
           <>
-            {tab === "schedule" && <SchedulePage matches={matches} league={league} />}
+            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} />}
             {tab === "table" && <TablePage standings={standings} league={league} />}
             {tab === "scorers" && <ScorersPage scorers={scorers} />}
           </>
