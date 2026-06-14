@@ -75,6 +75,12 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
   Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
 
+- **Tor-Benachrichtigung:** `useGoalNotifications` vergleicht bei Live-Spielen markierter Vereine
+  den Spielstand zwischen den 30‑s‑Aktualisierungen und feuert bei Anstieg eine Web-Notification
+  (Torschütze + Stand). `NotificationToggle` (Header, nur bei vorhandenen Favoriten) holt die
+  Browser-Erlaubnis; Zustand in localStorage `notify`. **Nur solange die App geöffnet ist**
+  (reines Frontend, kein Server → kein echtes Push bei geschlossener App). Auf iOS nur als
+  installierte PWA (Home-Bildschirm). Faktisch nur deutsche Ligen (nur die haben Live-Spiele).
 - **Live-Auto-Refresh:** `useLeagueData` lädt alle 30 s still nach, solange ein Spiel
   `status: "live"` hat (Badge im Spielplan; behält bei Fehlern die alten Daten). Greift faktisch
   nur für deutsche Ligen (OpenLigaDB, laufende Saison, gratis/ungedrosselt) – API-Football-Ligen
