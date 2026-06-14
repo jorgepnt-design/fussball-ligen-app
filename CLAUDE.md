@@ -60,6 +60,9 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   (localStorage, je Liga). Markiert den Verein in Tabelle & Spielplan (gold). Eigene Wahl hat
   Vorrang vor dem statischen `favoriteTeamName` aus `leagues.ts` (Default z. B. Darmstadt in bl2);
   "" = bewusst keiner. Team-Liste kommt aus der Tabelle (sonst aus den Spielen).
+- **Zuletzt gewählte Liga + Saison werden gemerkt** (localStorage `lastLeague`/`lastSeason`, in
+  `App.tsx`). Die App öffnet dort wieder, wo man war – so ist der markierte Verein sofort sichtbar
+  (vorher startete sie immer auf Liga Portugal, wodurch Favoriten „verschwunden" wirkten).
 - **Match-Detail (Torschützen + Statistik):** aufklappbar pro Spiel in `MatchCard`,
   `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert

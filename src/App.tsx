@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { FavoriteSelector } from "./components/FavoriteSelector";
 import { LeagueSwitcher } from "./components/LeagueSwitcher";
 import { ErrorState, LoadingState } from "./components/states";
-import { defaultLeagueId, getLeague } from "./config/leagues";
+import { defaultLeagueId, getLeague, leagues } from "./config/leagues";
 import { useFavoriteTeam } from "./hooks/useFavoriteTeam";
 import { useLeagueData } from "./hooks/useLeagueData";
 import { SchedulePage } from "./pages/SchedulePage";
@@ -12,6 +12,25 @@ import { TablePage } from "./pages/TablePage";
 
 type Tab = "schedule" | "table" | "scorers";
 
+// Zuletzt gewählte Liga/Saison merken, damit die App dort wieder öffnet
+// (und der markierte Verein direkt sichtbar ist).
+const LS_LEAGUE = "fussball-ligen:lastLeague";
+const LS_SEASON = "fussball-ligen:lastSeason";
+const safeGet = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const safeSet = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* localStorage nicht verfügbar */
+  }
+};
+
 const tabs = [
   { id: "schedule", label: "Spielplan", icon: CalendarDays },
   { id: "table", label: "Tabelle", icon: BarChart3 },
@@ -19,9 +38,15 @@ const tabs = [
 ] as const;
 
 export default function App() {
-  const [leagueId, setLeagueId] = useState(defaultLeagueId);
+  const [leagueId, setLeagueId] = useState(() => {
+    const saved = safeGet(LS_LEAGUE);
+    return saved && leagues.some((l) => l.id === saved) ? saved : defaultLeagueId;
+  });
   const league = getLeague(leagueId);
-  const [season, setSeason] = useState(league.defaultSeason);
+  const [season, setSeason] = useState(() => {
+    const saved = safeGet(LS_SEASON);
+    return saved && league.seasons.includes(saved) ? saved : league.defaultSeason;
+  });
   const [tab, setTab] = useState<Tab>("schedule");
 
   const { matches, standings, scorers, isLoading, error } = useLeagueData(league, season);
@@ -55,7 +80,15 @@ export default function App() {
 
   const changeLeague = (id: string) => {
     setLeagueId(id);
-    setSeason(getLeague(id).defaultSeason);
+    const nextSeason = getLeague(id).defaultSeason;
+    setSeason(nextSeason);
+    safeSet(LS_LEAGUE, id);
+    safeSet(LS_SEASON, nextSeason);
+  };
+
+  const changeSeason = (s: string) => {
+    setSeason(s);
+    safeSet(LS_SEASON, s);
   };
 
   return (
@@ -66,7 +99,7 @@ export default function App() {
           {league.flag} {league.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={setSeason} />
+          <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={changeSeason} />
           <FavoriteSelector teams={teams} value={favoriteValue} onChange={setFavorite} />
         </div>
       </header>
