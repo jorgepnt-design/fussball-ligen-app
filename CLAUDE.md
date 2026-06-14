@@ -65,10 +65,11 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 - **Zuletzt gewählte Liga + Saison werden gemerkt** (localStorage `lastLeague`/`lastSeason`, in
   `App.tsx`). Die App öffnet dort wieder, wo man war – so ist der markierte Verein sofort sichtbar
   (vorher startete sie immer auf Liga Portugal, wodurch Favoriten „verschwunden" wirkten).
-- **Vereins-Filter im Spielplan:** Auswahl-Buttons „Alle Spiele" + je ein Button pro Favorit
-  (`SchedulePage`, localStorage `scheduleFilter` = gewählter Vereinsname, "" = alle). Zeigt alle
-  Spiele genau dieses Vereins (vergangene + kommende, Heim & Auswärts). Greift nur, wenn der
-  gemerkte Verein in der aktuellen Liga Favorit ist; provider-unabhängig – funktioniert in allen Ligen.
+- **Vereins-Filter im Spielplan (Mehrfachauswahl):** Toggle-Buttons „Alle Spiele" + je ein Button
+  pro Favorit (`SchedulePage`, localStorage `scheduleFilter` = JSON-Array gewählter Vereinsnamen,
+  `[]` = alle; migriert altes Einzelwert-Format). Mehrere Vereine gleichzeitig aktivierbar → zeigt
+  alle Spiele der gewählten Vereine zusammen (vergangene + kommende, Heim & Auswärts). Es greifen nur
+  Vereine, die in der aktuellen Liga Favorit sind; provider-unabhängig – funktioniert in allen Ligen.
 - **Match-Detail (Torschützen + Statistik):** aufklappbar pro Spiel in `MatchCard`,
   `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
