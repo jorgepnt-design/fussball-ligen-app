@@ -56,16 +56,18 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 ## Umgesetzte Features (Auswahl)
 - **Ligen:** Liga Portugal (94), La Liga (140), Premier League (39), Ligue 1 (61) über API-Football;
   Bundesliga 1/2 über OpenLigaDB. Weitere Liga = ein Eintrag in `src/config/leagues.ts`.
-- **Favoriten-Verein selbst wählbar:** `FavoriteSelector` (Header) + `useFavoriteTeam`-Hook
-  (localStorage, je Liga). Markiert den Verein in Tabelle & Spielplan (gold). Eigene Wahl hat
-  Vorrang vor dem statischen `favoriteTeamName` aus `leagues.ts` (Default z. B. Darmstadt in bl2);
-  "" = bewusst keiner. Team-Liste kommt aus der Tabelle (sonst aus den Spielen).
+- **Favoriten-Vereine selbst wählbar (mehrere):** `FavoriteSelector` (Header, Dropdown zum
+  Hinzufügen + ×-Chips) + `useFavoriteTeams`-Hook (localStorage `favoriteTeams`, je Liga als
+  String-Array, migriert altes Einzelwert-Format). Markiert alle gewählten Vereine in Tabelle &
+  Spielplan (gold). Eigene Wahl hat Vorrang vor dem statischen `favoriteTeamName` aus `leagues.ts`
+  (Default z. B. Darmstadt in bl2); `[]` = bewusst keiner. Team-Liste kommt aus der Tabelle
+  (sonst aus den Spielen).
 - **Zuletzt gewählte Liga + Saison werden gemerkt** (localStorage `lastLeague`/`lastSeason`, in
   `App.tsx`). Die App öffnet dort wieder, wo man war – so ist der markierte Verein sofort sichtbar
   (vorher startete sie immer auf Liga Portugal, wodurch Favoriten „verschwunden" wirkten).
-- **Vereins-Filter im Spielplan:** Schalter „Nur <Verein>" (`SchedulePage`, localStorage
-  `onlyFavorite`) zeigt ausschließlich die Spiele des markierten Vereins (alle vergangenen +
-  kommenden, Heim & Auswärts). Provider-unabhängig – greift in allen Ligen.
+- **Vereins-Filter im Spielplan:** Schalter „Nur <Verein>" bzw. „Nur meine Vereine"
+  (`SchedulePage`, localStorage `onlyFavorite`) zeigt ausschließlich die Spiele der markierten
+  Vereine (alle vergangenen + kommenden, Heim & Auswärts). Provider-unabhängig – greift in allen Ligen.
 - **Match-Detail (Torschützen + Statistik):** aufklappbar pro Spiel in `MatchCard`,
   `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert

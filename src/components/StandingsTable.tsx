@@ -3,13 +3,13 @@ import { ClubLogo } from "./ClubLogo";
 
 interface Props {
   rows: StandingRow[];
-  favoriteTeamName?: string; // markierter Verein (selbst gewählt oder Liga-Default)
+  favoriteTeams?: string[]; // markierte Vereine (selbst gewählt oder Liga-Default)
 }
 
 // Erste Plaetze = Champions-League-Raenge (rein optisch, je Liga unterschiedlich).
 const rankColor = (rank: number) => (rank <= 4 ? "bg-pitch" : rank <= 6 ? "bg-gold/70" : rank >= 16 ? "bg-ember/70" : "bg-white/15");
 
-export function StandingsTable({ rows, favoriteTeamName }: Props) {
+export function StandingsTable({ rows, favoriteTeams }: Props) {
   return (
     <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5">
       <table className="w-full text-sm">
@@ -28,7 +28,7 @@ export function StandingsTable({ rows, favoriteTeamName }: Props) {
         </thead>
         <tbody>
           {rows.map((row) => {
-            const favorite = !!favoriteTeamName && row.team.name.includes(favoriteTeamName);
+            const favorite = !!favoriteTeams?.some((f) => row.team.name.includes(f));
             return (
               <tr key={row.team.id} className={`border-t border-white/5 ${favorite ? "bg-gold/15 text-gold" : ""}`}>
                 <td className="py-2.5 pl-3">

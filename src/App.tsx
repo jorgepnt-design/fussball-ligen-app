@@ -4,7 +4,7 @@ import { FavoriteSelector } from "./components/FavoriteSelector";
 import { LeagueSwitcher } from "./components/LeagueSwitcher";
 import { ErrorState, LoadingState } from "./components/states";
 import { defaultLeagueId, getLeague, leagues } from "./config/leagues";
-import { useFavoriteTeam } from "./hooks/useFavoriteTeam";
+import { useFavoriteTeams } from "./hooks/useFavoriteTeams";
 import { useLeagueData } from "./hooks/useLeagueData";
 import { SchedulePage } from "./pages/SchedulePage";
 import { ScorersPage } from "./pages/ScorersPage";
@@ -51,8 +51,8 @@ export default function App() {
 
   const { matches, standings, scorers, isLoading, error, isLive } = useLeagueData(league, season);
 
-  // Selbst gewählter Lieblingsverein (je Liga, im Browser gespeichert).
-  const { stored: storedFavorite, setFavorite } = useFavoriteTeam(league.id);
+  // Selbst gewählte Lieblingsvereine (mehrere möglich, je Liga, im Browser gespeichert).
+  const { stored: storedFavorites, setFavorites } = useFavoriteTeams(league.id);
 
   // Vereinsliste der aktuellen Liga/Saison – primär aus der Tabelle, sonst aus den Spielen.
   const teams = useMemo(() => {
@@ -68,15 +68,14 @@ export default function App() {
   }, [standings, matches]);
 
   // Default-Favorit (z. B. Darmstadt) als vollständigen Vereinsnamen auflösen.
-  const defaultFavorite = useMemo(() => {
+  const defaultFavorites = useMemo(() => {
     const fav = league.favoriteTeamName;
-    if (!fav) return "";
-    return teams.find((t) => t.includes(fav)) ?? fav;
+    if (!fav) return [];
+    return [teams.find((t) => t.includes(fav)) ?? fav];
   }, [teams, league.favoriteTeamName]);
 
-  // Eigene Wahl hat Vorrang; "" = bewusst keiner; sonst Liga-Default.
-  const favoriteValue = storedFavorite !== undefined ? storedFavorite : defaultFavorite;
-  const favoriteTeamName = favoriteValue || undefined;
+  // Eigene Wahl hat Vorrang ([] = bewusst keiner); sonst Liga-Default.
+  const favoriteTeams = storedFavorites !== undefined ? storedFavorites : defaultFavorites;
 
   const changeLeague = (id: string) => {
     setLeagueId(id);
@@ -100,7 +99,7 @@ export default function App() {
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={changeSeason} />
-          <FavoriteSelector teams={teams} value={favoriteValue} onChange={setFavorite} />
+          <FavoriteSelector teams={teams} selected={favoriteTeams} onChange={setFavorites} />
         </div>
       </header>
 
@@ -111,8 +110,8 @@ export default function App() {
           <LoadingState label="Daten werden geladen …" />
         ) : (
           <>
-            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} favoriteTeamName={favoriteTeamName} isLive={isLive} />}
-            {tab === "table" && <TablePage standings={standings} favoriteTeamName={favoriteTeamName} />}
+            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} favoriteTeams={favoriteTeams} isLive={isLive} />}
+            {tab === "table" && <TablePage standings={standings} favoriteTeams={favoriteTeams} />}
             {tab === "scorers" && <ScorersPage scorers={scorers} />}
           </>
         )}

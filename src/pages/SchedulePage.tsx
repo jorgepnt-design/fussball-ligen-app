@@ -8,7 +8,7 @@ interface Props {
   matches: Match[];
   league: LeagueConfig;
   season: string;
-  favoriteTeamName?: string;
+  favoriteTeams?: string[];
   isLive?: boolean; // mind. ein Spiel läuft → Auto-Aktualisierung aktiv
 }
 
@@ -20,7 +20,7 @@ const seasonLabel = (season: string): string => {
 
 const ONLY_FAV_KEY = "fussball-ligen:onlyFavorite";
 
-export function SchedulePage({ matches, league, season, favoriteTeamName, isLive }: Props) {
+export function SchedulePage({ matches, league, season, favoriteTeams = [], isLive }: Props) {
   const [onlyFavorite, setOnlyFavorite] = useState<boolean>(() => {
     try {
       return localStorage.getItem(ONLY_FAV_KEY) === "1";
@@ -37,15 +37,15 @@ export function SchedulePage({ matches, league, season, favoriteTeamName, isLive
     }
   };
 
-  // Nur sinnvoll, wenn überhaupt ein Verein markiert ist.
-  const filterActive = onlyFavorite && !!favoriteTeamName;
+  // Nur sinnvoll, wenn überhaupt Vereine markiert sind.
+  const filterActive = onlyFavorite && favoriteTeams.length > 0;
+  const filterLabel = favoriteTeams.length === 1 ? `Nur ${favoriteTeams[0]}` : "Nur meine Vereine";
 
-  // Auf den gewählten Verein eingrenzen (Heim- oder Auswärtsspiele).
+  // Auf die markierten Vereine eingrenzen (Heim- oder Auswärtsspiele eines der Vereine).
   const visible = useMemo(() => {
-    const fav = favoriteTeamName;
-    if (!filterActive || !fav) return matches;
-    return matches.filter((m) => m.home.name.includes(fav) || m.away.name.includes(fav));
-  }, [matches, filterActive, favoriteTeamName]);
+    if (!filterActive) return matches;
+    return matches.filter((m) => favoriteTeams.some((f) => m.home.name.includes(f) || m.away.name.includes(f)));
+  }, [matches, filterActive, favoriteTeams]);
 
   const { upcoming, results } = useMemo(() => {
     const upcoming = visible.filter((m) => m.status !== "finished");
@@ -66,7 +66,7 @@ export function SchedulePage({ matches, league, season, favoriteTeamName, isLive
 
   return (
     <div className="space-y-6">
-      {favoriteTeamName && (
+      {favoriteTeams.length > 0 && (
         <label className="flex cursor-pointer items-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm font-bold">
           <input
             type="checkbox"
@@ -75,13 +75,13 @@ export function SchedulePage({ matches, league, season, favoriteTeamName, isLive
             className="h-4 w-4 accent-gold"
           />
           <Filter size={15} className="text-gold" aria-hidden />
-          Nur {favoriteTeamName}
+          {filterLabel}
         </label>
       )}
 
       {filterActive && visible.length === 0 ? (
-        <EmptyState title={`Keine Spiele für ${favoriteTeamName}`}>
-          In dieser Liga/Saison sind keine Begegnungen dieses Vereins vorhanden.
+        <EmptyState title="Keine Spiele für deine Vereine">
+          In dieser Liga/Saison sind keine Begegnungen der markierten Vereine vorhanden.
         </EmptyState>
       ) : (
         <>
@@ -98,7 +98,7 @@ export function SchedulePage({ matches, league, season, favoriteTeamName, isLive
               </div>
               <div className="grid gap-3">
                 {upcoming.map((m) => (
-                  <MatchCard key={m.id} match={m} league={league} favoriteTeamName={favoriteTeamName} />
+                  <MatchCard key={m.id} match={m} league={league} favoriteTeams={favoriteTeams} />
                 ))}
               </div>
             </section>
@@ -108,7 +108,7 @@ export function SchedulePage({ matches, league, season, favoriteTeamName, isLive
               <h2 className="mb-3 text-xl font-black">{filterActive ? "Ergebnisse" : "Letzte Ergebnisse"}</h2>
               <div className="grid gap-3">
                 {results.map((m) => (
-                  <MatchCard key={m.id} match={m} league={league} favoriteTeamName={favoriteTeamName} />
+                  <MatchCard key={m.id} match={m} league={league} favoriteTeams={favoriteTeams} />
                 ))}
               </div>
             </section>
