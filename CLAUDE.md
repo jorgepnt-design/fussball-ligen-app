@@ -68,9 +68,13 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
   Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
 
+- **Live-Auto-Refresh:** `useLeagueData` lädt alle 30 s still nach, solange ein Spiel
+  `status: "live"` hat (Badge im Spielplan; behält bei Fehlern die alten Daten). Greift faktisch
+  nur für deutsche Ligen (OpenLigaDB, laufende Saison, gratis/ungedrosselt) – API-Football-Ligen
+  zeigen im Free-Plan nur abgeschlossene Saisons 2022–2024, also nie Live-Spiele.
+
 ## Sinnvolle nächste Schritte
-1. Optionale Ausbauten: Spieltag-Filter, Auto-Refresh für Live-Spiele,
-   **Aufstellungen** (API-Football `fixtures/lineups`).
+1. Optionale Ausbauten: Spieltag-Filter, **Aufstellungen** (API-Football `fixtures/lineups`).
 2. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
 
 ## Befehle
