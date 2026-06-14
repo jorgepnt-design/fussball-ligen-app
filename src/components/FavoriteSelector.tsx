@@ -17,12 +17,15 @@ export function FavoriteSelector({ teams, value, onChange }: Props) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="min-h-7 bg-transparent font-bold text-white focus:outline-none"
+        className="min-h-7 bg-night font-bold text-white focus:outline-none"
         aria-label="Mein Verein markieren"
       >
-        <option value="">Mein Verein wählen …</option>
+        {/* Optionen explizit dunkel, sonst rendert die geöffnete Liste weiß (weiße Schrift unsichtbar). */}
+        <option value="" className="bg-night text-white">
+          Mein Verein wählen …
+        </option>
         {teams.map((t) => (
-          <option key={t} value={t}>
+          <option key={t} value={t} className="bg-night text-white">
             {t}
           </option>
         ))}
