@@ -93,6 +93,21 @@ export const openLigaProvider: LeagueProvider = {
     return data
       .map((m) => {
         const score = finalScore(m);
+        // OpenLigaDB nennt keine Tor-Mannschaft direkt – aus dem Anstieg von
+        // scoreTeam1 ableiten, welche Seite getroffen hat (seitenrichtige Anzeige).
+        let runningHome = 0;
+        const goals = m.goals.map((g) => {
+          const team: "home" | "away" = g.scoreTeam1 > runningHome ? "home" : "away";
+          runningHome = g.scoreTeam1;
+          return {
+            minute: g.matchMinute != null ? `${g.matchMinute}'` : undefined,
+            scorer: g.goalGetterName,
+            team,
+            isPenalty: g.isPenalty,
+            isOwnGoal: g.isOwnGoal,
+            score: `${g.scoreTeam1}:${g.scoreTeam2}`,
+          };
+        });
         return {
           id: String(m.matchID),
           dateUtc: m.matchDateTimeUTC,
@@ -103,13 +118,7 @@ export const openLigaProvider: LeagueProvider = {
           scoreHome: score.home,
           scoreAway: score.away,
           venue: m.location?.locationStadium ?? undefined,
-          goals: m.goals.map((g) => ({
-            minute: g.matchMinute != null ? `${g.matchMinute}'` : undefined,
-            scorer: g.goalGetterName,
-            isPenalty: g.isPenalty,
-            isOwnGoal: g.isOwnGoal,
-            score: `${g.scoreTeam1}:${g.scoreTeam2}`,
-          })),
+          goals,
         } satisfies Match;
       })
       .sort((a, b) => new Date(a.dateUtc).getTime() - new Date(b.dateUtc).getTime());

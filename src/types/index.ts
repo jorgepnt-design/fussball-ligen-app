@@ -14,9 +14,24 @@ export interface Team {
 export interface GoalEvent {
   minute?: string;
   scorer: string;
+  team?: "home" | "away"; // welche Mannschaft traf (zur seitenrichtigen Anzeige)
+  assist?: string; // Vorlagengeber (sofern die Quelle ihn liefert)
   isPenalty?: boolean;
   isOwnGoal?: boolean;
   score?: string; // Zwischenstand, z. B. "2:1"
+}
+
+// Eine Statistik-Zeile eines Spiels (Heim vs. Auswärts), z. B. Ballbesitz, Torschüsse.
+export interface MatchStat {
+  type: string; // deutsches Label, z. B. "Ballbesitz"
+  home: string | number | null;
+  away: string | number | null;
+}
+
+// Detaildaten zu einem einzelnen Spiel – on-demand geladen (Torschützen + Statistik).
+export interface MatchDetails {
+  goals: GoalEvent[];
+  statistics: MatchStat[];
 }
 
 export interface Match {
@@ -77,4 +92,7 @@ export interface LeagueProvider {
   getMatches(league: LeagueConfig, season: string): Promise<Match[]>;
   getStandings(league: LeagueConfig, season: string): Promise<StandingRow[]>;
   getScorers(league: LeagueConfig, season: string): Promise<ScorerRow[]>;
+  // Optional: Torschützen + Statistik zu EINEM Spiel (on-demand). Quellen ohne
+  // Detail-Endpunkte (z. B. OpenLigaDB hat keine Statistik) lassen das weg.
+  getMatchDetails?(league: LeagueConfig, match: Match): Promise<MatchDetails>;
 }

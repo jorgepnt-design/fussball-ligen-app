@@ -51,8 +51,11 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
 
 ## Sinnvolle nächste Schritte
 1. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
-   Auto-Refresh für Live-Spiele, Match-Detail (Aufstellungen/Statistik – bei API-Football via
-   `fixtures/lineups`, `fixtures/statistics`, `fixtures/events`; bei OpenLigaDB begrenzt).
+   Auto-Refresh für Live-Spiele, **Aufstellungen** (API-Football `fixtures/lineups`).
+   - **Match-Detail (Torschützen + Statistik) ist umgesetzt:** aufklappbar pro Spiel in `MatchCard`,
+     `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
+     `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
+     Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
 2. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
 
 ## Befehle

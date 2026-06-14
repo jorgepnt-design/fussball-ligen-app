@@ -1,4 +1,4 @@
-import type { LeagueConfig, LeagueProvider, Match, MatchStatus, ScorerRow, StandingRow, Team } from "../../types";
+import type { GoalEvent, LeagueConfig, LeagueProvider, Match, MatchDetails, MatchStat, MatchStatus, ScorerRow, StandingRow, Team } from "../../types";
 
 // API-Football (v3) ueber einen Cloudflare-Worker-Proxy, der den API-Key versteckt
 // und CORS hinzufuegt. Der Proxy leitet /api/<pfad> an https://v3.football.api-sports.io/<pfad> weiter.
@@ -25,6 +25,25 @@ const finishedCodes = new Set(["FT", "AET", "PEN"]);
 const mapStatus = (short: string): MatchStatus => (finishedCodes.has(short) ? "finished" : liveCodes.has(short) ? "live" : "scheduled");
 
 const toTeam = (t: AfTeam): Team => ({ id: String(t.id), name: t.name, logoUrl: t.logo });
+
+// API-Football-Statistik-Typen (englisch) → deutsches Label, in Anzeige-Reihenfolge.
+const STAT_LABELS: Array<[string, string]> = [
+  ["Ball Possession", "Ballbesitz"],
+  ["expected_goals", "xG (erwartete Tore)"],
+  ["Total Shots", "Torschüsse"],
+  ["Shots on Goal", "Schüsse aufs Tor"],
+  ["Shots off Goal", "Schüsse daneben"],
+  ["Blocked Shots", "Geblockte Schüsse"],
+  ["Corner Kicks", "Eckbälle"],
+  ["Offsides", "Abseits"],
+  ["Fouls", "Fouls"],
+  ["Yellow Cards", "Gelbe Karten"],
+  ["Red Cards", "Rote Karten"],
+  ["Goalkeeper Saves", "Paraden"],
+  ["Total passes", "Pässe gesamt"],
+  ["Passes accurate", "Pässe angekommen"],
+  ["Passes %", "Passquote"],
+];
 
 const request = async <T>(path: string, params: Record<string, string | number>): Promise<T> => {
   if (!PROXY) throw new ProxyNotConfiguredError();
@@ -109,5 +128,53 @@ export const apiFootballProvider: LeagueProvider = {
         penalties: stat?.penalty.scored ?? undefined,
       };
     });
+  },
+
+  async getMatchDetails(_league: LeagueConfig, match: Match): Promise<MatchDetails> {
+    interface AfEvent {
+      time: { elapsed: number | null; extra: number | null };
+      team: { id: number };
+      player: { name: string | null };
+      assist: { name: string | null };
+      type: string; // "Goal" | "Card" | "subst" | "Var"
+      detail: string; // "Normal Goal" | "Penalty" | "Own Goal" | "Missed Penalty"
+    }
+    interface AfStatsTeam {
+      team: { id: number };
+      statistics: Array<{ type: string; value: string | number | null }>;
+    }
+
+    // Beide Detail-Endpunkte parallel; jeweils ein Aufruf pro Spiel (durch den
+    // Proxy 10 Min gecacht, schont das Free-Tier-Kontingent).
+    const [events, statsTeams] = await Promise.all([
+      request<AfEvent[]>("fixtures/events", { fixture: match.id }),
+      request<AfStatsTeam[]>("fixtures/statistics", { fixture: match.id }),
+    ]);
+
+    const goals: GoalEvent[] = events
+      .filter((e) => e.type === "Goal" && e.detail !== "Missed Penalty")
+      .map((e) => {
+        const extra = e.time.extra ? `+${e.time.extra}` : "";
+        return {
+          minute: e.time.elapsed != null ? `${e.time.elapsed}${extra}'` : undefined,
+          scorer: e.player.name ?? "Tor",
+          assist: e.assist.name ?? undefined,
+          team: String(e.team.id) === match.home.id ? "home" : "away",
+          isPenalty: e.detail === "Penalty",
+          isOwnGoal: e.detail === "Own Goal",
+        };
+      });
+
+    const findVal = (teamId: string, type: string): string | number | null => {
+      const item = statsTeams.find((s) => String(s.team.id) === teamId)?.statistics.find((x) => x.type === type);
+      return item ? item.value : null;
+    };
+    const statistics: MatchStat[] = STAT_LABELS.map(([eng, de]) => ({
+      type: de,
+      home: findVal(match.home.id, eng),
+      away: findVal(match.away.id, eng),
+    })).filter((s) => s.home != null || s.away != null);
+
+    return { goals, statistics };
   },
 };
