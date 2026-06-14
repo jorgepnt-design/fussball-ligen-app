@@ -8,6 +8,7 @@ import { defaultLeagueId, getLeague, leagues } from "./config/leagues";
 import { useFavoriteTeams } from "./hooks/useFavoriteTeams";
 import { useGoalNotifications } from "./hooks/useGoalNotifications";
 import { useLeagueData } from "./hooks/useLeagueData";
+import { usePush } from "./hooks/usePush";
 import { SchedulePage } from "./pages/SchedulePage";
 import { ScorersPage } from "./pages/ScorersPage";
 import { TablePage } from "./pages/TablePage";
@@ -18,7 +19,7 @@ type Tab = "schedule" | "table" | "scorers";
 // (und der markierte Verein direkt sichtbar ist).
 const LS_LEAGUE = "fussball-ligen:lastLeague";
 const LS_SEASON = "fussball-ligen:lastSeason";
-const LS_NOTIFY = "fussball-ligen:notify";
+const FAVORITES_KEY = "fussball-ligen:favoriteTeams";
 const safeGet = (key: string): string | null => {
   try {
     return localStorage.getItem(key);
@@ -80,16 +81,22 @@ export default function App() {
   // Eigene Wahl hat Vorrang ([] = bewusst keiner); sonst Liga-Default.
   const favoriteTeams = storedFavorites !== undefined ? storedFavorites : defaultFavorites;
 
-  // Tor-Benachrichtigungen (nur wenn aktiviert UND Browser-Erlaubnis vorhanden).
-  const [notifyEnabled, setNotifyEnabled] = useState(() => {
-    const on = safeGet(LS_NOTIFY) === "1";
-    return on && typeof Notification !== "undefined" && Notification.permission === "granted";
-  });
-  const changeNotify = (value: boolean) => {
-    setNotifyEnabled(value);
-    safeSet(LS_NOTIFY, value ? "1" : "0");
-  };
-  useGoalNotifications(matches, favoriteTeams, notifyEnabled);
+  // Tor-Benachrichtigungen: Push-Abo über alle als Favorit markierten Vereine (alle Ligen).
+  // Nur deutsche Ligen liefern Live-Tore, aber zusätzliche Namen schaden nicht.
+  const allFavoriteTeams = useMemo(() => {
+    const set = new Set<string>(favoriteTeams);
+    try {
+      const map = JSON.parse(safeGet(FAVORITES_KEY) ?? "{}") as Record<string, unknown>;
+      for (const value of Object.values(map)) if (Array.isArray(value)) for (const t of value) if (typeof t === "string") set.add(t);
+    } catch {
+      /* ignore */
+    }
+    return [...set];
+  }, [favoriteTeams]);
+
+  const push = usePush(allFavoriteTeams);
+  // In-App-Benachrichtigung (sofort, solange offen); der Service Worker unterdrückt dann Push-Dubletten.
+  useGoalNotifications(matches, favoriteTeams, push.enabled);
 
   const changeLeague = (id: string) => {
     setLeagueId(id);
@@ -114,7 +121,7 @@ export default function App() {
         <div className="flex flex-wrap items-center gap-2">
           <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={changeSeason} />
           <FavoriteSelector teams={teams} selected={favoriteTeams} onChange={setFavorites} />
-          {favoriteTeams.length > 0 && <NotificationToggle enabled={notifyEnabled} onChange={changeNotify} />}
+          {favoriteTeams.length > 0 && <NotificationToggle push={push} />}
         </div>
       </header>
 

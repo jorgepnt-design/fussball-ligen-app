@@ -75,12 +75,18 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
   Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
 
-- **Tor-Benachrichtigung:** `useGoalNotifications` vergleicht bei Live-Spielen markierter Vereine
-  den Spielstand zwischen den 30‑s‑Aktualisierungen und feuert bei Anstieg eine Web-Notification
-  (Torschütze + Stand). `NotificationToggle` (Header, nur bei vorhandenen Favoriten) holt die
-  Browser-Erlaubnis; Zustand in localStorage `notify`. **Nur solange die App geöffnet ist**
-  (reines Frontend, kein Server → kein echtes Push bei geschlossener App). Auf iOS nur als
-  installierte PWA (Home-Bildschirm). Faktisch nur deutsche Ligen (nur die haben Live-Spiele).
+- **Tor-Benachrichtigung (echtes Web-Push, auch bei geschlossener App):**
+  - **Backend:** Cloudflare-Worker in `push/` (`ligen-push.jorge-ligen.workers.dev`), Cron jede
+    Minute → pollt OpenLigaDB (bl1/bl2), erkennt Tor-Anstiege, sendet Web-Push an passende Abos.
+    KV `SUBS` (Abos `sub:<hash>` + `scores`). VAPID: Public in `wrangler.toml`/`src/config/push.ts`,
+    Private als Worker-Secret. Krypto (RFC 8291/8292, WebCrypto) gegen RFC-Testvektor verifiziert
+    (`push/test-webpush.mjs`). Setup/Details: `push/README.md`.
+  - **Frontend:** Service Worker `public/sw.js` (zeigt Push, unterdrückt Dublette wenn App sichtbar),
+    `usePush`-Hook (Abo/__abmelden__/Test, abonniert die Vereinsnamen aller Liga-Favoriten),
+    `NotificationToggle` (Header, „Tor-Alarm" + Test-Knopf). Zusätzlich `useGoalNotifications`
+    (In-App-Notification alle 30 s, solange offen) für sofortige Anzeige.
+  - **Grenzen:** iOS nur als installierte PWA (Home-Bildschirm, iOS 16.4+). Faktisch nur deutsche
+    Ligen (nur die haben Live-Spiele). Cron-Takt = 1 Min, also bis zu ~1 Min Verzögerung.
 - **Live-Auto-Refresh:** `useLeagueData` lädt alle 30 s still nach, solange ein Spiel
   `status: "live"` hat (Badge im Spielplan; behält bei Fehlern die alten Daten). Greift faktisch
   nur für deutsche Ligen (OpenLigaDB, laufende Saison, gratis/ungedrosselt) – API-Football-Ligen
