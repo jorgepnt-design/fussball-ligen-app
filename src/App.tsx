@@ -49,7 +49,7 @@ export default function App() {
   });
   const [tab, setTab] = useState<Tab>("schedule");
 
-  const { matches, standings, scorers, isLoading, error } = useLeagueData(league, season);
+  const { matches, standings, scorers, isLoading, error, isLive } = useLeagueData(league, season);
 
   // Selbst gewählter Lieblingsverein (je Liga, im Browser gespeichert).
   const { stored: storedFavorite, setFavorite } = useFavoriteTeam(league.id);
@@ -111,7 +111,7 @@ export default function App() {
           <LoadingState label="Daten werden geladen …" />
         ) : (
           <>
-            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} favoriteTeamName={favoriteTeamName} />}
+            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} favoriteTeamName={favoriteTeamName} isLive={isLive} />}
             {tab === "table" && <TablePage standings={standings} favoriteTeamName={favoriteTeamName} />}
             {tab === "scorers" && <ScorersPage scorers={scorers} />}
           </>
