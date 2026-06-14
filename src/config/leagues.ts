@@ -44,6 +44,7 @@ export const leagues: LeagueConfig[] = [
     openLigaShortcut: "bl2",
     seasons: openLigaSeasons,
     defaultSeason: "2025",
+    favoriteTeamName: "Darmstadt", // Lieblingsverein – wird in Tabelle & Spielplan hervorgehoben
   },
 ];
 
