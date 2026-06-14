@@ -53,13 +53,21 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
   GitHub-Pages-Workflow `.github/workflows/deploy-pages.yml` deployt bei jedem Push auf `main`.
   **Live:** https://jorgepnt-design.github.io/fussball-ligen-app/ (Pages-Quelle = GitHub Actions).
 
+## Umgesetzte Features (Auswahl)
+- **Ligen:** Liga Portugal (94), La Liga (140), Premier League (39), Ligue 1 (61) über API-Football;
+  Bundesliga 1/2 über OpenLigaDB. Weitere Liga = ein Eintrag in `src/config/leagues.ts`.
+- **Favoriten-Verein selbst wählbar:** `FavoriteSelector` (Header) + `useFavoriteTeam`-Hook
+  (localStorage, je Liga). Markiert den Verein in Tabelle & Spielplan (gold). Eigene Wahl hat
+  Vorrang vor dem statischen `favoriteTeamName` aus `leagues.ts` (Default z. B. Darmstadt in bl2);
+  "" = bewusst keiner. Team-Liste kommt aus der Tabelle (sonst aus den Spielen).
+- **Match-Detail (Torschützen + Statistik):** aufklappbar pro Spiel in `MatchCard`,
+  `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
+  `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
+  Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
+
 ## Sinnvolle nächste Schritte
-1. Optionale Ausbauten: Favoriten-Team je Liga (`favoriteTeamName` setzen + UI), Spieltag-Filter,
-   Auto-Refresh für Live-Spiele, **Aufstellungen** (API-Football `fixtures/lineups`).
-   - **Match-Detail (Torschützen + Statistik) ist umgesetzt:** aufklappbar pro Spiel in `MatchCard`,
-     `LeagueProvider.getMatchDetails?` (optional). API-Football lädt `fixtures/events` +
-     `fixtures/statistics` on-demand (Proxy-Cache schont das Kontingent); OpenLigaDB liefert
-     Torschützen inline, aber KEINE Statistik (klarer Hinweis statt Fehler).
+1. Optionale Ausbauten: Spieltag-Filter, Auto-Refresh für Live-Spiele,
+   **Aufstellungen** (API-Football `fixtures/lineups`).
 2. Weitere Ligen: nur `src/config/leagues.ts` erweitern (Provider + ID/Kürzel + Saisons).
 
 ## Befehle

@@ -46,6 +46,36 @@ export const leagues: LeagueConfig[] = [
     defaultSeason: "2025",
     favoriteTeamName: "Darmstadt", // Lieblingsverein – wird in Tabelle & Spielplan hervorgehoben
   },
+  {
+    id: "la-liga",
+    name: "La Liga",
+    country: "Spanien",
+    flag: "🇪🇸",
+    provider: "apifootball",
+    apiFootballId: 140,
+    seasons: apiFootballFreeSeasons,
+    defaultSeason: "2024",
+  },
+  {
+    id: "premier-league",
+    name: "Premier League",
+    country: "England",
+    flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    provider: "apifootball",
+    apiFootballId: 39,
+    seasons: apiFootballFreeSeasons,
+    defaultSeason: "2024",
+  },
+  {
+    id: "ligue-1",
+    name: "Ligue 1",
+    country: "Frankreich",
+    flag: "🇫🇷",
+    provider: "apifootball",
+    apiFootballId: 61,
+    seasons: apiFootballFreeSeasons,
+    defaultSeason: "2024",
+  },
 ];
 
 export const defaultLeagueId = "primeira-liga";

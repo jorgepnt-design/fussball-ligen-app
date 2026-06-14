@@ -1,8 +1,10 @@
 import { BarChart3, CalendarDays, Goal } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { FavoriteSelector } from "./components/FavoriteSelector";
 import { LeagueSwitcher } from "./components/LeagueSwitcher";
 import { ErrorState, LoadingState } from "./components/states";
 import { defaultLeagueId, getLeague } from "./config/leagues";
+import { useFavoriteTeam } from "./hooks/useFavoriteTeam";
 import { useLeagueData } from "./hooks/useLeagueData";
 import { SchedulePage } from "./pages/SchedulePage";
 import { ScorersPage } from "./pages/ScorersPage";
@@ -24,6 +26,33 @@ export default function App() {
 
   const { matches, standings, scorers, isLoading, error } = useLeagueData(league, season);
 
+  // Selbst gewählter Lieblingsverein (je Liga, im Browser gespeichert).
+  const { stored: storedFavorite, setFavorite } = useFavoriteTeam(league.id);
+
+  // Vereinsliste der aktuellen Liga/Saison – primär aus der Tabelle, sonst aus den Spielen.
+  const teams = useMemo(() => {
+    const set = new Set<string>();
+    for (const row of standings) set.add(row.team.name);
+    if (set.size === 0) {
+      for (const m of matches) {
+        set.add(m.home.name);
+        set.add(m.away.name);
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "de"));
+  }, [standings, matches]);
+
+  // Default-Favorit (z. B. Darmstadt) als vollständigen Vereinsnamen auflösen.
+  const defaultFavorite = useMemo(() => {
+    const fav = league.favoriteTeamName;
+    if (!fav) return "";
+    return teams.find((t) => t.includes(fav)) ?? fav;
+  }, [teams, league.favoriteTeamName]);
+
+  // Eigene Wahl hat Vorrang; "" = bewusst keiner; sonst Liga-Default.
+  const favoriteValue = storedFavorite !== undefined ? storedFavorite : defaultFavorite;
+  const favoriteTeamName = favoriteValue || undefined;
+
   const changeLeague = (id: string) => {
     setLeagueId(id);
     setSeason(getLeague(id).defaultSeason);
@@ -36,7 +65,10 @@ export default function App() {
         <h1 className="mb-3 text-2xl font-black md:text-3xl">
           {league.flag} {league.name}
         </h1>
-        <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={setSeason} />
+        <div className="flex flex-wrap items-center gap-2">
+          <LeagueSwitcher league={league} season={season} onLeagueChange={changeLeague} onSeasonChange={setSeason} />
+          <FavoriteSelector teams={teams} value={favoriteValue} onChange={setFavorite} />
+        </div>
       </header>
 
       <main>
@@ -46,8 +78,8 @@ export default function App() {
           <LoadingState label="Daten werden geladen …" />
         ) : (
           <>
-            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} />}
-            {tab === "table" && <TablePage standings={standings} league={league} />}
+            {tab === "schedule" && <SchedulePage matches={matches} league={league} season={season} favoriteTeamName={favoriteTeamName} />}
+            {tab === "table" && <TablePage standings={standings} favoriteTeamName={favoriteTeamName} />}
             {tab === "scorers" && <ScorersPage scorers={scorers} />}
           </>
         )}

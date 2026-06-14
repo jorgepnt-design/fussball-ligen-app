@@ -7,6 +7,7 @@ import { ClubLogo } from "./ClubLogo";
 interface Props {
   match: Match;
   league: LeagueConfig;
+  favoriteTeamName?: string; // markierter Verein (selbst gewählt oder Liga-Default)
 }
 
 const fmtDate = (iso: string) =>
@@ -26,7 +27,7 @@ function StatusBadge({ match }: { match: Match }) {
   return <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-bold uppercase text-white/70">Geplant</span>;
 }
 
-const isFav = (league: LeagueConfig, name: string) => league.favoriteTeamName && name.includes(league.favoriteTeamName);
+const isFav = (favorite: string | undefined, name: string) => !!favorite && name.includes(favorite);
 
 // Torschützen-Liste: Heimtore links, Auswärtstore rechtsbündig (seitenrichtig).
 function GoalList({ goals }: { goals: GoalEvent[] }) {
@@ -86,11 +87,11 @@ function StatBars({ stats }: { stats: MatchStat[] }) {
 
 type DetailState = { status: "idle" | "loading" | "done" | "error"; data?: MatchDetails; error?: string };
 
-export function MatchCard({ match, league }: Props) {
+export function MatchCard({ match, league, favoriteTeamName }: Props) {
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<DetailState>({ status: "idle" });
 
-  const favorite = isFav(league, match.home.name) || isFav(league, match.away.name);
+  const favorite = isFav(favoriteTeamName, match.home.name) || isFav(favoriteTeamName, match.away.name);
   const showScore = match.status !== "scheduled" && match.scoreHome != null && match.scoreAway != null;
   const inlineGoals = match.goals ?? []; // OpenLigaDB liefert Torschützen direkt mit.
   const supportsDetails = leagueService.supportsMatchDetails(league); // API-Football: events + statistics

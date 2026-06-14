@@ -1,15 +1,15 @@
-import type { LeagueConfig, StandingRow } from "../types";
+import type { StandingRow } from "../types";
 import { ClubLogo } from "./ClubLogo";
 
 interface Props {
   rows: StandingRow[];
-  league: LeagueConfig;
+  favoriteTeamName?: string; // markierter Verein (selbst gewählt oder Liga-Default)
 }
 
 // Erste Plaetze = Champions-League-Raenge (rein optisch, je Liga unterschiedlich).
 const rankColor = (rank: number) => (rank <= 4 ? "bg-pitch" : rank <= 6 ? "bg-gold/70" : rank >= 16 ? "bg-ember/70" : "bg-white/15");
 
-export function StandingsTable({ rows, league }: Props) {
+export function StandingsTable({ rows, favoriteTeamName }: Props) {
   return (
     <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5">
       <table className="w-full text-sm">
@@ -28,7 +28,7 @@ export function StandingsTable({ rows, league }: Props) {
         </thead>
         <tbody>
           {rows.map((row) => {
-            const favorite = league.favoriteTeamName && row.team.name.includes(league.favoriteTeamName);
+            const favorite = !!favoriteTeamName && row.team.name.includes(favoriteTeamName);
             return (
               <tr key={row.team.id} className={`border-t border-white/5 ${favorite ? "bg-gold/15 text-gold" : ""}`}>
                 <td className="py-2.5 pl-3">
