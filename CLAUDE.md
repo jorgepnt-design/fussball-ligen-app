@@ -80,7 +80,8 @@ normalisierten Typen in `src/types/index.ts` mappt (`Match`, `StandingRow`, `Sco
     Minute → pollt OpenLigaDB (bl1/bl2), erkennt Tor-Anstiege, sendet Web-Push an passende Abos.
     KV `SUBS` (Abos `sub:<hash>` + `scores`). VAPID: Public in `wrangler.toml`/`src/config/push.ts`,
     Private als Worker-Secret. Krypto (RFC 8291/8292, WebCrypto) gegen RFC-Testvektor verifiziert
-    (`push/test-webpush.mjs`). Setup/Details: `push/README.md`.
+    (`push/test-webpush.mjs`). Setup/Details: `push/README.md`. **Auf echtem Gerät bestätigt:
+    Test-Push kommt an (auch bei geschlossener App).**
   - **Frontend:** Service Worker `public/sw.js` (zeigt Push, unterdrückt Dublette wenn App sichtbar),
     `usePush`-Hook (Abo/__abmelden__/Test, abonniert die Vereinsnamen aller Liga-Favoriten),
     `NotificationToggle` (Header, „Tor-Alarm" + Test-Knopf). Zusätzlich `useGoalNotifications`
