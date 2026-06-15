@@ -71,7 +71,12 @@ async function checkGoals(env) {
       }
     }
   }
-  await env.SUBS.put(SCORES_KEY, JSON.stringify(next), { expirationTtl: 6 * 3600 });
+  // Nur schreiben wenn sich Scores geändert haben – spart KV-Write-Kontingent (Free: 1000/Tag).
+  // Cron läuft jede Minute → ohne diese Prüfung wären es 1440 Writes/Tag allein für diesen Key.
+  const scoresChanged =
+    Object.keys(next).length !== Object.keys(prev).length ||
+    Object.keys(next).some((k) => next[k] !== prev[k]);
+  if (scoresChanged) await env.SUBS.put(SCORES_KEY, JSON.stringify(next), { expirationTtl: 6 * 3600 });
   if (goals.length === 0) return;
 
   const list = await env.SUBS.list({ prefix: "sub:" });
