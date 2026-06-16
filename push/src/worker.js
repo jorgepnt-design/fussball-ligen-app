@@ -1,12 +1,14 @@
-// Cloudflare-Worker: Web-Push für Tor-Benachrichtigungen.
-// - HTTP: /subscribe, /unsubscribe, /test (vom Frontend aufgerufen).
-// - Cron (jede Minute): pollt OpenLigaDB (bl1/bl2), erkennt neue Tore und sendet Push
-//   an alle Abos, deren Vereine beteiligt sind. Nur deutsche Ligen haben Live-Spiele.
+// Cloudflare Worker: Web Push fuer Tor-Benachrichtigungen.
+// - HTTP: /subscribe, /unsubscribe, /test, /status.
+// - Cron: pollt OpenLigaDB fuer bl1/bl2, erkennt neue Tore und sendet Push
+//   an Abos, deren Vereine beteiligt sind.
 import { sendPush } from "./webpush.js";
 
 const UPSTREAM = "https://api.openligadb.de";
 const LEAGUES = ["bl1", "bl2"];
 const SCORES_KEY = "scores";
+const SUB_INDEX_KEY = "sub:index";
+const WORKER_VERSION = "kv-index-v2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +20,32 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, 
 const subKey = async (endpoint) => {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
   return "sub:" + [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 40);
+};
+
+const subHashFromKey = (key) => key.replace(/^sub:/, "");
+const subKeyFromHash = (hash) => `sub:${hash}`;
+
+const getSubIndex = async (env) => {
+  const value = await env.SUBS.get(SUB_INDEX_KEY, "json");
+  return Array.isArray(value) ? value.filter((hash) => typeof hash === "string") : [];
+};
+
+const putSubIndex = (env, hashes) => env.SUBS.put(SUB_INDEX_KEY, JSON.stringify([...new Set(hashes)]));
+
+const addSubToIndex = async (env, hash) => {
+  const hashes = await getSubIndex(env);
+  if (!hashes.includes(hash)) await putSubIndex(env, [...hashes, hash]);
+};
+
+const removeSubFromIndex = async (env, hash) => {
+  const hashes = await getSubIndex(env);
+  if (hashes.includes(hash)) await putSubIndex(env, hashes.filter((item) => item !== hash));
+};
+
+const deleteSub = async (env, keyOrHash) => {
+  const hash = subHashFromKey(keyOrHash);
+  await env.SUBS.delete(subKeyFromHash(hash));
+  await removeSubFromIndex(env, hash);
 };
 
 const seasonYear = () => {
@@ -45,6 +73,25 @@ const liveScore = (m) => {
   return [0, 0];
 };
 
+const getIndexedSubscriptions = async (env) => {
+  const hashes = await getSubIndex(env);
+  const subs = [];
+  for (const hash of hashes) {
+    const key = subKeyFromHash(hash);
+    const value = await env.SUBS.get(key);
+    if (!value) {
+      await removeSubFromIndex(env, hash);
+      continue;
+    }
+    try {
+      subs.push({ key, ...JSON.parse(value) });
+    } catch {
+      await deleteSub(env, hash);
+    }
+  }
+  return subs;
+};
+
 async function checkGoals(env) {
   const season = seasonYear();
   const live = [];
@@ -53,7 +100,7 @@ async function checkGoals(env) {
       const data = await fetch(`${UPSTREAM}/getmatchdata/${lg}/${season}`, { cf: { cacheTtl: 0 } }).then((r) => r.json());
       if (Array.isArray(data)) for (const m of data) if (isLive(m)) live.push(m);
     } catch {
-      /* Liga überspringen */
+      // Liga ueberspringen.
     }
   }
 
@@ -71,20 +118,17 @@ async function checkGoals(env) {
       }
     }
   }
-  // Nur schreiben wenn sich Scores geändert haben – spart KV-Write-Kontingent (Free: 1000/Tag).
-  // Cron läuft jede Minute → ohne diese Prüfung wären es 1440 Writes/Tag allein für diesen Key.
+
+  // Nur schreiben wenn sich Scores geaendert haben. Das spart KV-Write-Kontingent.
   const scoresChanged =
     Object.keys(next).length !== Object.keys(prev).length ||
     Object.keys(next).some((k) => next[k] !== prev[k]);
   if (scoresChanged) await env.SUBS.put(SCORES_KEY, JSON.stringify(next), { expirationTtl: 6 * 3600 });
   if (goals.length === 0) return;
 
-  const list = await env.SUBS.list({ prefix: "sub:" });
-  const subs = [];
-  for (const k of list.keys) {
-    const v = await env.SUBS.get(k.name);
-    if (v) subs.push({ key: k.name, ...JSON.parse(v) });
-  }
+  // Kein KV.list() im Cron: Abos werden ueber sub:index gefunden.
+  const subs = await getIndexedSubscriptions(env);
+  if (subs.length === 0) return;
 
   const jobs = [];
   for (const goal of goals) {
@@ -93,7 +137,7 @@ async function checkGoals(env) {
       const wanted = teams.some((t) => t && (goal.home.includes(t) || goal.away.includes(t)));
       if (!wanted) continue;
       const payload = {
-        title: "⚽ Tor!",
+        title: "Tor!",
         body: `${goal.scoringSide}\n${goal.home} ${goal.scoreHome} : ${goal.scoreAway} ${goal.away}`,
         url: env.APP_URL,
         tag: `goal-${goal.home}-${goal.away}`,
@@ -101,7 +145,7 @@ async function checkGoals(env) {
       jobs.push(
         sendPush(s.subscription, payload, env)
           .then(async (res) => {
-            if (res.status === 404 || res.status === 410) await env.SUBS.delete(s.key);
+            if (res.status === 404 || res.status === 410) await deleteSub(env, s.key);
           })
           .catch(() => {}),
       );
@@ -115,16 +159,22 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     const url = new URL(request.url);
 
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/status")) {
+      return json({ ok: true, service: "ligen-push", version: WORKER_VERSION });
+    }
+
     if (request.method === "POST" && url.pathname === "/subscribe") {
       const { subscription, teams } = await request.json().catch(() => ({}));
       if (!subscription?.endpoint) return json({ error: "subscription fehlt" }, 400);
-      await env.SUBS.put(await subKey(subscription.endpoint), JSON.stringify({ subscription, teams: teams || [] }));
+      const key = await subKey(subscription.endpoint);
+      await env.SUBS.put(key, JSON.stringify({ subscription, teams: teams || [] }));
+      await addSubToIndex(env, subHashFromKey(key));
       return json({ ok: true });
     }
 
     if (request.method === "POST" && url.pathname === "/unsubscribe") {
       const { endpoint } = await request.json().catch(() => ({}));
-      if (endpoint) await env.SUBS.delete(await subKey(endpoint));
+      if (endpoint) await deleteSub(env, await subKey(endpoint));
       return json({ ok: true });
     }
 
@@ -132,7 +182,7 @@ export default {
       const { subscription } = await request.json().catch(() => ({}));
       if (!subscription?.endpoint) return json({ error: "subscription fehlt" }, 400);
       try {
-        const res = await sendPush(subscription, { title: "⚽ Test – es funktioniert!", body: "So sieht eine Tor-Benachrichtigung aus.", url: env.APP_URL }, env);
+        const res = await sendPush(subscription, { title: "Test Push", body: "So sieht eine Tor-Benachrichtigung aus.", url: env.APP_URL }, env);
         return json({ ok: res.ok, status: res.status });
       } catch (e) {
         return json({ ok: false, error: String(e) }, 500);

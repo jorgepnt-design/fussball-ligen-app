@@ -1,19 +1,20 @@
-name = "ligen-push"
+﻿name = "ligen-push"
 main = "src/worker.js"
 compatibility_date = "2024-11-01"
 
-# Cron: jede Minute Live-Spiele prüfen (nur deutsche Ligen haben Live-Daten).
+# Cron: jede Minute Live-Spiele pruefen. Der Worker nutzt sub:index statt KV.list(),
+# damit das kostenlose Cloudflare-KV-List-Limit nicht taeglich erreicht wird.
 [triggers]
 crons = ["* * * * *"]
 
-# KV speichert Push-Abos (sub:<hash>) und die zuletzt gesehenen Spielstände (scores).
+# KV speichert Push-Abos (sub:<hash>), den Abo-Index (sub:index) und die zuletzt gesehenen Spielstaende (scores).
 # id nach  `npx wrangler kv namespace create SUBS`  hier eintragen.
 [[kv_namespaces]]
 binding = "SUBS"
 id = "d58846d861ff498bafa823cdc33511bf"
 
 [vars]
-# Öffentlicher VAPID-Schlüssel (kein Geheimnis). Der private Schlüssel ist ein Secret:
+# Ã–ffentlicher VAPID-SchlÃ¼ssel (kein Geheimnis). Der private SchlÃ¼ssel ist ein Secret:
 #   npx wrangler secret put VAPID_PRIVATE
 VAPID_PUBLIC = "BAWbZTM5icUSeBdn-WujBDam9H_nDm3ltwGW_yfU4MCYWMvp9aLppKhXx8th4ANxxYR-MQdCZpr5-9NnMgI93vI"
 VAPID_SUBJECT = "mailto:jorgepnt@gmail.com"
