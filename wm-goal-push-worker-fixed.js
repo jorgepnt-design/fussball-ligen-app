@@ -77,6 +77,15 @@ const getSub = (env, hash) => env.PUSH.get(`sub:${hash}`, "json");
 const putSub = (env, hash, value) => env.PUSH.put(`sub:${hash}`, JSON.stringify(value));
 const delSub = (env, hash) => Promise.all([env.PUSH.delete(`sub:${hash}`), env.PUSH.delete(`pending:${hash}`)]);
 
+// Liste aller Abos+Spiele wird gecacht statt bei jedem Cron-Lauf per env.PUSH.list() neu
+// aufgebaut zu werden. Free-Tier erlaubt nur 1000 list-Vorgaenge/Tag; Cron laeuft jede
+// Minute (max. 1440 Laeufe/Tag) - ohne Cache wuerde allein das die Quote sprengen.
+// Bei Aenderungen (subscribe/matches/unsubscribe) wird der Cache sofort geleert, damit
+// neue Abos nicht erst nach Ablauf der TTL beruecksichtigt werden.
+const MATCHSUBS_CACHE_KEY = "matchSubsCache";
+const MATCHSUBS_CACHE_TTL = 300; // 5 Minuten
+const invalidateMatchSubsCache = (env) => env.PUSH.delete(MATCHSUBS_CACHE_KEY).catch(() => {});
+
 // --- HTTP-Endpunkte ---
 async function handleRequest(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
@@ -88,6 +97,7 @@ async function handleRequest(request, env) {
     const hash = await hashEndpoint(subscription.endpoint);
     const existing = (await getSub(env, hash)) || {};
     await putSub(env, hash, { subscription, matchIds: existing.matchIds || [], updatedAt: Date.now() });
+    await invalidateMatchSubsCache(env);
     return json({ ok: true });
   }
 
@@ -98,12 +108,16 @@ async function handleRequest(request, env) {
     const existing = await getSub(env, hash);
     if (!existing) return json({ error: "unbekanntes Abo" }, 404);
     await putSub(env, hash, { ...existing, matchIds: Array.isArray(matchIds) ? matchIds : [], updatedAt: Date.now() });
+    await invalidateMatchSubsCache(env);
     return json({ ok: true });
   }
 
   if (request.method === "POST" && url.pathname === "/unsubscribe") {
     const { endpoint } = await request.json();
-    if (endpoint) await delSub(env, await hashEndpoint(endpoint));
+    if (endpoint) {
+      await delSub(env, await hashEndpoint(endpoint));
+      await invalidateMatchSubsCache(env);
+    }
     return json({ ok: true });
   }
 
@@ -174,8 +188,12 @@ function latestGoal(detail, side) {
   return { name, minute: g.Minute || "", isOwnGoal, isPenalty };
 }
 
-// --- Cron: Tore erkennen & Push senden ---
-async function checkGoals(env) {
+// Baut die Zuordnung Spiel->Abos auf. Wird ueber MATCHSUBS_CACHE_KEY gecacht (TTL s.o.),
+// damit env.PUSH.list() nicht bei jedem Cron-Lauf (jede Minute) neu aufgerufen wird.
+async function buildMatchSubs(env) {
+  const cached = await env.PUSH.get(MATCHSUBS_CACHE_KEY, "json");
+  if (cached) return new Map(cached);
+
   const matchSubs = new Map();
   let cursor;
   do {
@@ -192,6 +210,13 @@ async function checkGoals(env) {
     cursor = list.list_complete ? undefined : list.cursor;
   } while (cursor);
 
+  await env.PUSH.put(MATCHSUBS_CACHE_KEY, JSON.stringify([...matchSubs]), { expirationTtl: MATCHSUBS_CACHE_TTL });
+  return matchSubs;
+}
+
+// --- Cron: Tore erkennen & Push senden ---
+async function checkGoals(env) {
+  const matchSubs = await buildMatchSubs(env);
   if (matchSubs.size === 0) return;
 
   const res = await fetch(FIFA_URL, { headers: { Accept: "application/json" }, cf: { cacheTtl: 0 } });
